@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST API Client</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Mobile Toggle Button -->
+    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-content">
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button id="theme-toggle" class="btn btn--outline btn--sm">🌙 Dark</button>
+                </div>
+
+                <!-- Environment Section -->
+                <div class="sidebar-section">
+                    <h3>Environment</h3>
+                    <select id="environment-select" class="form-control">
+                        <option value="0">None</option>
+                    </select>
+                    <button id="manage-env-btn" class="btn btn--outline btn--sm" style="margin-top: 8px;">Manage</button>
+                </div>
+
+                <!-- Saved Requests Section -->
+                <div class="sidebar-section">
+                    <h3>Saved Requests</h3>
+                    <div id="saved-requests" class="request-list">
+                        <div class="empty-state">No saved requests</div>
+                    </div>
+                    <button id="import-sample-btn" class="btn btn--outline btn--sm" style="margin-top: 8px;">Load Samples</button>
+                </div>
+
+                <!-- History Section -->
+                <div class="sidebar-section">
+                    <h3>History</h3>
+                    <div id="request-history" class="request-list">
+                        <div class="empty-state">No history</div>
+                    </div>
+                    <button id="clear-history-btn" class="btn btn--outline btn--sm" style="margin-top: 8px;">Clear</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Request Section -->
+            <div class="request-section">
+                <!-- Request URL Bar -->
+                <div class="request-bar">
+                    <select id="method-select" class="method-select">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="HEAD">HEAD</option>
+                        <option value="OPTIONS">OPTIONS</option>
+                    </select>
+                    <input type="text" id="url-input" class="form-control url-input" placeholder="Enter request URL (e.g., https://api.example.com/users)">
+                    <button id="send-btn" class="btn btn--primary">Send</button>
+                    <button id="save-btn" class="btn btn--secondary">Save</button>
+                </div>
+
+                <!-- Request Configuration Tabs -->
+                <div class="tabs-container">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="headers">Headers</button>
+                        <button class="tab-btn" data-tab="params">Query Params</button>
+                        <button class="tab-btn" data-tab="auth">Auth</button>
+                        <button class="tab-btn" data-tab="body">Body</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Headers Tab -->
+                        <div id="headers-tab" class="tab-panel active">
+                            <div class="panel-header">
+                                <h4>Request Headers</h4>
+                                <button id="add-header-btn" class="btn btn--outline btn--sm">+ Add Header</button>
+                            </div>
+                            <div id="headers-container" class="kv-container"></div>
+                        </div>
+
+                        <!-- Query Params Tab -->
+                        <div id="params-tab" class="tab-panel">
+                            <div class="panel-header">
+                                <h4>Query Parameters</h4>
+                                <button id="add-param-btn" class="btn btn--outline btn--sm">+ Add Parameter</button>
+                            </div>
+                            <div id="params-container" class="kv-container"></div>
+                        </div>
+
+                        <!-- Auth Tab -->
+                        <div id="auth-tab" class="tab-panel">
+                            <div class="auth-section">
+                                <h4>Authentication</h4>
+                                <select id="auth-type" class="form-control" style="margin-bottom: 16px;">
+                                    <option value="none">No Auth</option>
+                                    <option value="bearer">Bearer Token</option>
+                                    <option value="apikey">API Key</option>
+                                    <option value="basic">Basic Auth</option>
+                                </select>
+                                <div id="auth-fields"></div>
+                            </div>
+                        </div>
+
+                        <!-- Body Tab -->
+                        <div id="body-tab" class="tab-panel">
+                            <div class="body-section">
+                                <h4>Request Body</h4>
+                                <div class="body-type-selector">
+                                    <label><input type="radio" name="body-type" value="json" checked> JSON</label>
+                                    <label><input type="radio" name="body-type" value="text"> Text</label>
+                                    <label><input type="radio" name="body-type" value="form"> Form Data</label>
+                                </div>
+                                <textarea id="body-textarea" class="form-control body-textarea" placeholder='{\n  "key": "value"\n}' rows="8"></textarea>
+                                <div id="form-data-container" class="kv-container" style="display: none;"></div>
+                                <button id="add-form-field-btn" class="btn btn--outline btn--sm" style="display: none; margin-top: 8px;">+ Add Field</button>
+                                <button id="format-json-btn" class="btn btn--outline btn--sm" style="margin-top: 8px;">Format JSON</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Section -->
+            <div class="response-section">
+                <div class="response-header">
+                    <h3>Response</h3>
+                    <div class="response-meta">
+                        <span id="response-status" class="status status--info">Ready</span>
+                        <span id="response-time" class="status status--info">0ms</span>
+                        <span id="response-size" class="status status--info">0B</span>
+                    </div>
+                    <div class="response-actions">
+                        <button id="copy-response-btn" class="btn btn--outline btn--sm">Copy</button>
+                        <button id="clear-response-btn" class="btn btn--outline btn--sm">Clear</button>
+                    </div>
+                </div>
+
+                <div class="response-tabs">
+                    <button class="response-tab-btn active" data-tab="body">Body</button>
+                    <button class="response-tab-btn" data-tab="response-headers">Headers</button>
+                </div>
+
+                <div class="response-content">
+                    <div id="response-body-tab" class="response-tab-panel active">
+                        <pre id="response-body" class="response-body"><code>No response yet. Send a request to see results here.</code></pre>
+                    </div>
+                    <div id="response-headers-tab" class="response-tab-panel">
+                        <pre id="response-headers-display" class="response-headers">No headers</pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Save Request Modal -->
+    <div id="save-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Save Request</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Request Name</label>
+                    <input type="text" id="save-name-input" class="form-control" placeholder="Enter request name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (optional)</label>
+                    <textarea id="save-description-input" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-save-btn" class="btn btn--outline">Cancel</button>
+                <button id="confirm-save-btn" class="btn btn--primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environment Modal -->
+    <div id="env-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Manage Environments</h3>
+            </div>
+            <div class="modal-body">
+                <div id="env-list"></div>
+                <button id="add-env-btn" class="btn btn--outline btn--sm" style="margin-top: 16px;">+ Add Environment</button>
+            </div>
+            <div class="modal-footer">
+                <button id="close-env-modal-btn" class="btn btn--primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
