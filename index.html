@@ -1,223 +1,541 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REST API Client</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>REST API Client</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
 </head>
-<body>
-    <!-- Mobile Sidebar Toggle -->
-    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
-        <span></span>
-        <span></span>
-        <span></span>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+  <header class="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-20">
+    <h1 class="text-xl font-semibold text-gray-800">REST API Client</h1>
+    <button
+      id="openSettingsBtn"
+      aria-label="Open Settings"
+      class="text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+      title="Settings"
+    >
+      <i class="fas fa-cog fa-lg"></i>
     </button>
+  </header>
 
-    <!-- App Container -->
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar">
-            <div class="sidebar-header">
-                <h2>API Client</h2>
-                <button id="theme-toggle" class="theme-toggle">ð</button>
-            </div>
-
-            <div class="sidebar-content">
-                <!-- Environment -->
-                <section class="sidebar-section">
-                    <h3>Environment</h3>
-                    <select id="environment-select" class="form-control">
-                        <option value="0">None</option>
-                    </select>
-                </section>
-
-                <!-- Saved Requests -->
-                <section class="sidebar-section">
-                    <div class="section-header">
-                        <h3>Saved</h3>
-                        <button id="import-sample-btn" class="btn btn--outline btn--sm">Samples</button>
-                    </div>
-                    <div id="saved-requests" class="request-list">
-                        <div class="empty-state">No saved requests</div>
-                    </div>
-                </section>
-
-                <!-- History -->
-                <section class="sidebar-section">
-                    <div class="section-header">
-                        <h3>History</h3>
-                        <button id="clear-history-btn" class="btn btn--outline btn--sm">Clear</button>
-                    </div>
-                    <div id="request-history" class="request-list">
-                        <div class="empty-state">No history</div>
-                    </div>
-                </section>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Request Panel -->
-            <div class="request-panel">
-                <!-- URL Bar -->
-                <div class="url-bar">
-                    <select id="method-select" class="method-select form-control">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                        <option value="PATCH">PATCH</option>
-                        <option value="HEAD">HEAD</option>
-                        <option value="OPTIONS">OPTIONS</option>
-                    </select>
-                    <input type="text" id="url-input" class="form-control url-input" placeholder="https://api.example.com/endpoint">
-                    <div class="url-actions">
-                        <button id="save-btn" class="btn btn--outline">Save</button>
-                        <button id="send-btn" class="btn btn--primary">Send</button>
-                    </div>
-                </div>
-
-                <!-- Request Configuration -->
-                <div class="config-tabs">
-                    <nav class="tab-nav">
-                        <button class="tab-btn active" data-tab="params">Params</button>
-                        <button class="tab-btn" data-tab="headers">Headers</button>
-                        <button class="tab-btn" data-tab="auth">Auth</button>
-                        <button class="tab-btn" data-tab="body">Body</button>
-                    </nav>
-
-                    <!-- Query Parameters -->
-                    <div id="params-tab" class="tab-panel active">
-                        <div class="panel-header">
-                            <h4>Query Parameters</h4>
-                            <button id="add-param-btn" class="btn btn--outline btn--sm">Add</button>
-                        </div>
-                        <div id="params-container" class="kv-container"></div>
-                    </div>
-
-                    <!-- Headers -->
-                    <div id="headers-tab" class="tab-panel">
-                        <div class="panel-header">
-                            <h4>Request Headers</h4>
-                            <button id="add-header-btn" class="btn btn--outline btn--sm">Add</button>
-                        </div>
-                        <div id="headers-container" class="kv-container"></div>
-                    </div>
-
-                    <!-- Authentication -->
-                    <div id="auth-tab" class="tab-panel">
-                        <div class="panel-header">
-                            <h4>Authentication</h4>
-                        </div>
-                        <select id="auth-type" class="form-control auth-type-select">
-                            <option value="none">No Auth</option>
-                            <option value="bearer">Bearer Token</option>
-                            <option value="apikey">API Key</option>
-                            <option value="basic">Basic Auth</option>
-                        </select>
-                        <div id="auth-fields" class="auth-fields"></div>
-                    </div>
-
-                    <!-- Request Body -->
-                    <div id="body-tab" class="tab-panel">
-                        <div class="panel-header">
-                            <h4>Request Body</h4>
-                            <button id="format-json-btn" class="btn btn--outline btn--sm">Format JSON</button>
-                        </div>
-                        <div class="body-type-tabs">
-                            <label class="body-type-label">
-                                <input type="radio" name="body-type" value="json" checked> JSON
-                            </label>
-                            <label class="body-type-label">
-                                <input type="radio" name="body-type" value="text"> Text
-                            </label>
-                            <label class="body-type-label">
-                                <input type="radio" name="body-type" value="form"> Form
-                            </label>
-                        </div>
-                        <textarea id="body-textarea" class="form-control body-textarea" placeholder='{"key": "value"}' rows="6"></textarea>
-                        <div id="form-data-container" class="kv-container" style="display: none;"></div>
-                        <button id="add-form-field-btn" class="btn btn--outline btn--sm" style="display: none;">Add Field</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Response Panel -->
-            <div class="response-panel">
-                <div class="response-header">
-                    <div class="response-title">
-                        <h3>Response</h3>
-                        <div class="response-meta">
-                            <span id="response-status" class="status status--info">Ready</span>
-                            <span id="response-time" class="response-time">0ms</span>
-                            <span id="response-size" class="response-size">0B</span>
-                        </div>
-                    </div>
-                    <div class="response-actions">
-                        <button id="copy-response-btn" class="btn btn--outline btn--sm">Copy</button>
-                        <button id="clear-response-btn" class="btn btn--outline btn--sm">Clear</button>
-                    </div>
-                </div>
-
-                <div class="response-tabs">
-                    <nav class="response-tab-nav">
-                        <button class="response-tab-btn active" data-tab="body">Body</button>
-                        <button class="response-tab-btn" data-tab="response-headers">Headers</button>
-                    </nav>
-
-                    <div class="response-content">
-                        <div id="response-body-tab" class="response-tab-panel active">
-                            <pre id="response-body" class="response-body"><code>No response yet. Send a request to see results here.</code></pre>
-                        </div>
-                        <div id="response-headers-tab" class="response-tab-panel">
-                            <pre id="response-headers-display" class="response-headers">No headers</pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Save Request Modal -->
-    <div id="save-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Save Request</h3>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Name</label>
-                    <input type="text" id="save-name-input" class="form-control" placeholder="My API Request">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea id="save-description-input" class="form-control" rows="2" placeholder="Optional description"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancel-save-btn" class="btn btn--outline">Cancel</button>
-                <button id="confirm-save-btn" class="btn btn--primary">Save</button>
-            </div>
+  <main class="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-6 pb-20">
+    <section
+      id="panel-request"
+      role="tabpanel"
+      tabindex="0"
+      aria-labelledby="tab-request"
+      class="flex flex-col space-y-4"
+    >
+      <form id="requestForm" class="flex flex-col space-y-4" autocomplete="off">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+          <label for="httpMethod" class="mb-1 sm:mb-0 font-medium text-gray-700 w-24">Method</label>
+          <select
+            id="httpMethod"
+            name="httpMethod"
+            class="w-full sm:w-40 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          >
+            <option value="GET" selected>GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+          </select>
         </div>
-    </div>
 
-    <!-- Environment Modal -->
-    <div id="env-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Environment Variables</h3>
-            </div>
-            <div class="modal-body">
-                <div id="env-list"></div>
-                <button id="add-env-btn" class="btn btn--outline">Add Environment</button>
-            </div>
-            <div class="modal-footer">
-                <button id="close-env-modal-btn" class="btn btn--primary">Close</button>
-            </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+          <label for="requestUrl" class="mb-1 sm:mb-0 font-medium text-gray-700 w-24">Endpoint</label>
+          <input
+            type="text"
+            id="requestUrl"
+            name="requestUrl"
+            placeholder="/endpoint or full URL"
+            class="w-full sm:flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="off"
+          />
         </div>
-    </div>
 
-    <script src="app.js"></script>
+        <div>
+          <label for="requestHeaders" class="block mb-1 font-medium text-gray-700">Headers (JSON)</label>
+          <textarea
+            id="requestHeaders"
+            name="requestHeaders"
+            rows="4"
+            placeholder='{"Content-Type": "application/json"}'
+            class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+          ></textarea>
+        </div>
+
+        <div>
+          <label for="requestBody" class="block mb-1 font-medium text-gray-700">Body (JSON)</label>
+          <textarea
+            id="requestBody"
+            name="requestBody"
+            rows="6"
+            placeholder='{"key": "value"}'
+            class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="self-start bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded px-6 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          Send Request
+        </button>
+      </form>
+    </section>
+
+    <section
+      id="panel-response"
+      role="tabpanel"
+      tabindex="0"
+      aria-labelledby="tab-response"
+      class="hidden flex flex-col space-y-4"
+    >
+      <div class="flex flex-col space-y-2">
+        <div class="flex flex-wrap gap-4 text-sm text-gray-700">
+          <div><span class="font-semibold">Status:</span> <span id="responseStatus">-</span></div>
+          <div><span class="font-semibold">Time:</span> <span id="responseTime">-</span></div>
+          <div><span class="font-semibold">Size:</span> <span id="responseSize">-</span></div>
+        </div>
+      </div>
+
+      <div>
+        <label for="responseHeaders" class="block mb-1 font-medium text-gray-700">Headers</label>
+        <textarea
+          id="responseHeaders"
+          readonly
+          rows="6"
+          class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm bg-gray-100 resize-y"
+        >-</textarea>
+      </div>
+
+      <div>
+        <label for="responseBody" class="block mb-1 font-medium text-gray-700">Body</label>
+        <textarea
+          id="responseBody"
+          readonly
+          rows="12"
+          class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm bg-gray-100 resize-y"
+        >-</textarea>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation Tabs -->
+  <nav
+    role="tablist"
+    aria-label="Request and Response Tabs"
+    class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 flex justify-around items-center h-14 z-30"
+  >
+    <button
+      id="tab-request"
+      role="tab"
+      aria-selected="true"
+      aria-controls="panel-request"
+      tabindex="0"
+      class="flex flex-col items-center justify-center text-indigo-600 font-semibold focus:outline-none"
+      aria-label="Request Tab"
+      type="button"
+    >
+      <i class="fas fa-paper-plane fa-lg mb-0.5"></i>
+      <span class="text-xs leading-none">Request</span>
+      <span class="block w-full h-0.5 bg-indigo-600 rounded mt-1"></span>
+    </button>
+    <button
+      id="tab-response"
+      role="tab"
+      aria-selected="false"
+      aria-controls="panel-response"
+      tabindex="-1"
+      class="flex flex-col items-center justify-center text-gray-600 focus:outline-none hover:text-indigo-600"
+      aria-label="Response Tab"
+      type="button"
+    >
+      <i class="fas fa-file-alt fa-lg mb-0.5"></i>
+      <span class="text-xs leading-none">Response</span>
+      <span class="block w-full h-0.5 bg-transparent rounded mt-1"></span>
+    </button>
+  </nav>
+
+  <!-- Settings Dialog Overlay -->
+  <div
+    id="settingsOverlay"
+    class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-40 hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settingsTitle"
+  >
+    <div class="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
+      <h2 id="settingsTitle" class="text-xl font-semibold text-gray-800 mb-4">Environment Settings</h2>
+      <form id="settingsForm" class="flex flex-col space-y-4" autocomplete="off">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+          <label for="envApiEndpoint" class="mb-1 sm:mb-0 font-medium text-gray-700 w-36">API Endpoint</label>
+          <input
+            type="url"
+            id="envApiEndpoint"
+            name="envApiEndpoint"
+            placeholder="https://api.example.com"
+            class="w-full sm:flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="envCommonHeaders" class="block mb-1 font-medium text-gray-700">Common Headers (JSON)</label>
+          <textarea
+            id="envCommonHeaders"
+            name="envCommonHeaders"
+            rows="6"
+            placeholder='{"Authorization": "Bearer token"}'
+            class="w-full border border-gray-300 rounded px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-2 border-t border-gray-200">
+          <button
+            type="button"
+            id="cancelSettingsBtn"
+            class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+      <button
+        id="closeSettingsBtn"
+        aria-label="Close Settings"
+        class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+      >
+        <i class="fas fa-times fa-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      // Elements
+      const tabRequest = document.querySelector('nav[role="tablist"] button#tab-request');
+      const tabResponse = document.querySelector('nav[role="tablist"] button#tab-response');
+      const panelRequest = document.getElementById('panel-request');
+      const panelResponse = document.getElementById('panel-response');
+
+      const openSettingsBtn = document.getElementById('openSettingsBtn');
+      const settingsOverlay = document.getElementById('settingsOverlay');
+      const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+      const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+      const settingsForm = document.getElementById('settingsForm');
+
+      const envApiEndpointInput = document.getElementById('envApiEndpoint');
+      const envCommonHeadersInput = document.getElementById('envCommonHeaders');
+
+      const requestForm = document.getElementById('requestForm');
+      const httpMethodInput = document.getElementById('httpMethod');
+      const requestUrlInput = document.getElementById('requestUrl');
+      const requestHeadersInput = document.getElementById('requestHeaders');
+      const requestBodyInput = document.getElementById('requestBody');
+
+      const responseStatus = document.getElementById('responseStatus');
+      const responseTime = document.getElementById('responseTime');
+      const responseSize = document.getElementById('responseSize');
+      const responseHeaders = document.getElementById('responseHeaders');
+      const responseBody = document.getElementById('responseBody');
+
+      // Local Storage Keys
+      const STORAGE_KEYS = {
+        ENV_API_ENDPOINT: 'restapi_env_api_endpoint',
+        ENV_COMMON_HEADERS: 'restapi_env_common_headers',
+      };
+
+      // Tab switching
+      function switchTab(selectedTab) {
+        if (selectedTab === 'request') {
+          tabRequest.setAttribute('aria-selected', 'true');
+          tabRequest.tabIndex = 0;
+          tabRequest.classList.add('text-indigo-600', 'font-semibold');
+          tabRequest.classList.remove('text-gray-600');
+
+          tabResponse.setAttribute('aria-selected', 'false');
+          tabResponse.tabIndex = -1;
+          tabResponse.classList.remove('text-indigo-600', 'font-semibold');
+          tabResponse.classList.add('text-gray-600');
+
+          panelRequest.classList.remove('hidden');
+          panelResponse.classList.add('hidden');
+          panelRequest.focus();
+        } else {
+          tabResponse.setAttribute('aria-selected', 'true');
+          tabResponse.tabIndex = 0;
+          tabResponse.classList.add('text-indigo-600', 'font-semibold');
+          tabResponse.classList.remove('text-gray-600');
+
+          tabRequest.setAttribute('aria-selected', 'false');
+          tabRequest.tabIndex = -1;
+          tabRequest.classList.remove('text-indigo-600', 'font-semibold');
+          tabRequest.classList.add('text-gray-600');
+
+          panelResponse.classList.remove('hidden');
+          panelRequest.classList.add('hidden');
+          panelResponse.focus();
+        }
+      }
+
+      tabRequest.addEventListener('click', () => switchTab('request'));
+      tabResponse.addEventListener('click', () => switchTab('response'));
+
+      // Settings dialog open/close
+      function openSettings() {
+        loadSettings();
+        settingsOverlay.classList.remove('hidden');
+        envApiEndpointInput.focus();
+        document.body.style.overflow = 'hidden';
+      }
+      function closeSettings() {
+        settingsOverlay.classList.add('hidden');
+        document.body.style.overflow = '';
+        openSettingsBtn.focus();
+      }
+
+      openSettingsBtn.addEventListener('click', openSettings);
+      closeSettingsBtn.addEventListener('click', closeSettings);
+      cancelSettingsBtn.addEventListener('click', closeSettings);
+
+      // Close settings on overlay click (but not on dialog click)
+      settingsOverlay.addEventListener('click', (e) => {
+        if (e.target === settingsOverlay) {
+          closeSettings();
+        }
+      });
+
+      // Keyboard accessibility for dialog: close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (!settingsOverlay.classList.contains('hidden') && e.key === 'Escape') {
+          e.preventDefault();
+          closeSettings();
+        }
+      });
+
+      // Load settings from localStorage
+      function loadSettings() {
+        const apiEndpoint = localStorage.getItem(STORAGE_KEYS.ENV_API_ENDPOINT) || '';
+        const commonHeaders = localStorage.getItem(STORAGE_KEYS.ENV_COMMON_HEADERS) || '';
+
+        envApiEndpointInput.value = apiEndpoint;
+        envCommonHeadersInput.value = commonHeaders;
+      }
+
+      // Save settings to localStorage
+      settingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        // Validate JSON for headers
+        const headersText = envCommonHeadersInput.value.trim();
+        if (headersText) {
+          try {
+            JSON.parse(headersText);
+          } catch {
+            alert('Common Headers must be valid JSON.');
+            envCommonHeadersInput.focus();
+            return;
+          }
+        }
+
+        localStorage.setItem(STORAGE_KEYS.ENV_API_ENDPOINT, envApiEndpointInput.value.trim());
+        localStorage.setItem(STORAGE_KEYS.ENV_COMMON_HEADERS, headersText);
+
+        closeSettings();
+      });
+
+      // Merge headers helper
+      function mergeHeaders(commonHeaders, requestHeaders) {
+        const merged = { ...commonHeaders, ...requestHeaders };
+        return merged;
+      }
+
+      // Send request handler
+      requestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Clear previous response
+        responseStatus.textContent = '-';
+        responseTime.textContent = '-';
+        responseSize.textContent = '-';
+        responseHeaders.value = '-';
+        responseBody.value = '-';
+
+        // Get environment settings
+        const envApiEndpoint = localStorage.getItem(STORAGE_KEYS.ENV_API_ENDPOINT) || '';
+        const envCommonHeadersRaw = localStorage.getItem(STORAGE_KEYS.ENV_COMMON_HEADERS) || '';
+
+        // Parse common headers
+        let envCommonHeaders = {};
+        if (envCommonHeadersRaw.trim()) {
+          try {
+            envCommonHeaders = JSON.parse(envCommonHeadersRaw);
+          } catch {
+            alert('Stored common headers are invalid JSON. Please fix in settings.');
+            switchTab('request');
+            openSettings();
+            return;
+          }
+        }
+
+        // Get form values
+        const method = httpMethodInput.value.toUpperCase();
+        let urlInput = requestUrlInput.value.trim();
+        if (!urlInput) {
+          alert('Please enter an endpoint or full URL.');
+          requestUrlInput.focus();
+          return;
+        }
+
+        // Determine final URL:
+        // If urlInput is absolute URL, use it as is.
+        // Else if envApiEndpoint is set, combine them.
+        // Else treat urlInput as absolute URL (may fail)
+        let url = '';
+        try {
+          // Try absolute URL parse
+          new URL(urlInput);
+          url = urlInput;
+        } catch {
+          // Not absolute URL
+          if (envApiEndpoint) {
+            // Combine, ensure slashes handled properly
+            url = envApiEndpoint.replace(/\/+$/, '') + '/' + urlInput.replace(/^\/+/, '');
+          } else {
+            // No base, treat as absolute (likely invalid)
+            url = urlInput;
+          }
+        }
+
+        // Parse request headers JSON
+        let requestHeaders = {};
+        const requestHeadersRaw = requestHeadersInput.value.trim();
+        if (requestHeadersRaw) {
+          try {
+            requestHeaders = JSON.parse(requestHeadersRaw);
+          } catch {
+            alert('Request Headers must be valid JSON.');
+            requestHeadersInput.focus();
+            return;
+          }
+        }
+
+        // Merge headers
+        const headers = mergeHeaders(envCommonHeaders, requestHeaders);
+
+        // Prepare fetch options
+        const options = {
+          method,
+          headers,
+        };
+
+        // Add body if method allows and body is present
+        const requestBodyRaw = requestBodyInput.value.trim();
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && requestBodyRaw) {
+          options.body = requestBodyRaw;
+          // If Content-Type header is not set, default to application/json
+          if (!Object.keys(headers).some(h => h.toLowerCase() === 'content-type')) {
+            options.headers['Content-Type'] = 'application/json';
+          }
+        }
+
+        // Send request and measure time
+        let startTime = performance.now();
+        let response;
+        try {
+          response = await fetch(url, options);
+        } catch (error) {
+          alert('Network error or CORS issue: ' + error.message);
+          switchTab('response');
+          responseStatus.textContent = 'Error';
+          responseHeaders.value = '-';
+          responseBody.value = error.message;
+          return;
+        }
+        let endTime = performance.now();
+
+        // Status
+        responseStatus.textContent = `${response.status} ${response.statusText}`;
+
+        // Time in ms
+        responseTime.textContent = `${Math.round(endTime - startTime)} ms`;
+
+        // Headers
+        const headersObj = {};
+        response.headers.forEach((value, key) => {
+          headersObj[key] = value;
+        });
+        responseHeaders.value = JSON.stringify(headersObj, null, 2);
+
+        // Size (approximate)
+        let size = 0;
+        try {
+          const contentLength = response.headers.get('content-length');
+          if (contentLength) {
+            size = parseInt(contentLength, 10);
+          } else {
+            // fallback: read body as blob and get size
+            const blob = await response.clone().blob();
+            size = blob.size;
+          }
+        } catch {
+          size = 0;
+        }
+        responseSize.textContent = size ? `${size} bytes` : '-';
+
+        // Body
+        let bodyText = '';
+        try {
+          // Try to parse as JSON
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const json = await response.clone().json();
+            bodyText = JSON.stringify(json, null, 2);
+          } else {
+            bodyText = await response.clone().text();
+          }
+        } catch {
+          bodyText = await response.clone().text();
+        }
+        responseBody.value = bodyText || '-';
+
+        // Switch to response tab
+        switchTab('response');
+      });
+
+      // On page load, load settings and clear request URL input (user enters endpoint or full URL)
+      window.addEventListener('load', () => {
+        loadSettings();
+        requestUrlInput.value = '';
+      });
+    })();
+  </script>
 </body>
 </html>
