@@ -1,4 +1,4 @@
-// REST API Client Application
+// Clean REST API Client Application - FIXED VERSION
 class RestApiClient {
     constructor() {
         this.currentRequest = {
@@ -15,45 +15,45 @@ class RestApiClient {
         this.currentEnvIndex = 0;
         this.savedRequests = [];
         this.requestHistory = [];
-        this.isDarkMode = true;
+        this.isDarkMode = false;
         this.lastResponse = null;
         
-        // Sample data from requirements
+        // Sample data for quick start
         this.sampleData = {
             requests: [
                 {
-                    name: "Get Posts",
+                    name: "JSONPlaceholder - Get Post",
                     method: "GET",
-                    url: "https://jsonplaceholder.typicode.com/posts",
-                    headers: [{"key": "Content-Type", "value": "application/json"}],
+                    url: "https://jsonplaceholder.typicode.com/posts/1",
+                    headers: [{"key": "Accept", "value": "application/json"}],
                     body: ""
                 },
                 {
-                    name: "Test HTTP Methods",
+                    name: "JSONPlaceholder - Create Post",
+                    method: "POST",
+                    url: "https://jsonplaceholder.typicode.com/posts",
+                    headers: [{"key": "Content-Type", "value": "application/json"}],
+                    body: '{\n  "title": "New Post",\n  "body": "This is the post content",\n  "userId": 1\n}'
+                },
+                {
+                    name: "HTTPBin - Test GET",
                     method: "GET",
                     url: "https://httpbin.org/get",
                     headers: [{"key": "User-Agent", "value": "REST-Client/1.0"}],
                     body: ""
                 },
                 {
-                    name: "Get Users",
-                    method: "GET",
-                    url: "https://reqres.in/api/users",
-                    headers: [{"key": "Accept", "value": "application/json"}],
-                    body: ""
-                },
-                {
-                    name: "Create Post",
+                    name: "HTTPBin - Test POST",
                     method: "POST",
-                    url: "https://jsonplaceholder.typicode.com/posts",
+                    url: "https://httpbin.org/post",
                     headers: [{"key": "Content-Type", "value": "application/json"}],
-                    body: '{\n  "title": "Sample Post",\n  "body": "This is a sample post body",\n  "userId": 1\n}'
+                    body: '{\n  "message": "Hello World",\n  "timestamp": "2025-01-21T08:19:00Z"\n}'
                 }
             ],
             environments: [
-                {"name": "Development", "baseUrl": "https://api-dev.example.com"},
-                {"name": "Staging", "baseUrl": "https://api-staging.example.com"},
-                {"name": "Production", "baseUrl": "https://api.example.com"}
+                {"name": "JSONPlaceholder", "baseUrl": "https://jsonplaceholder.typicode.com"},
+                {"name": "HTTPBin", "baseUrl": "https://httpbin.org"},
+                {"name": "Local Development", "baseUrl": "http://localhost:3000"}
             ]
         };
         
@@ -66,7 +66,7 @@ class RestApiClient {
         this.updateUI();
         this.addEmptyKVPairs();
         
-        // Set theme
+        // Apply theme
         document.documentElement.setAttribute('data-color-scheme', this.isDarkMode ? 'dark' : 'light');
         this.updateThemeToggle();
     }
@@ -74,94 +74,182 @@ class RestApiClient {
     setupEventListeners() {
         // Sidebar toggle (mobile)
         const sidebarToggle = document.getElementById('sidebar-toggle');
-        const sidebar = document.getElementById('sidebar');
-        sidebarToggle?.addEventListener('click', () => this.toggleSidebar());
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+        }
         
         // Theme toggle
         const themeToggle = document.getElementById('theme-toggle');
-        themeToggle?.addEventListener('click', () => this.toggleTheme());
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
         
-        // Request controls
+        // Main request controls
         const methodSelect = document.getElementById('method-select');
         const urlInput = document.getElementById('url-input');
         const sendBtn = document.getElementById('send-btn');
         const saveBtn = document.getElementById('save-btn');
         
-        methodSelect?.addEventListener('change', (e) => {
-            this.currentRequest.method = e.target.value;
-        });
+        if (methodSelect) {
+            methodSelect.addEventListener('change', (e) => {
+                this.currentRequest.method = e.target.value;
+                console.log('Method changed to:', e.target.value);
+            });
+        }
         
-        urlInput?.addEventListener('input', (e) => {
-            this.currentRequest.url = e.target.value;
-        });
+        if (urlInput) {
+            urlInput.addEventListener('input', (e) => {
+                this.currentRequest.url = e.target.value;
+            });
+        }
         
-        sendBtn?.addEventListener('click', () => this.sendRequest());
-        saveBtn?.addEventListener('click', () => this.showSaveModal());
+        if (sendBtn) {
+            sendBtn.addEventListener('click', () => {
+                console.log('Send button clicked');
+                this.sendRequest();
+            });
+        }
         
-        // Keyboard shortcut for send (Ctrl/Cmd + Enter)
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.showSaveModal());
+        }
+        
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 this.sendRequest();
             }
+            if (e.key === 'Escape') {
+                this.closeAllModals();
+            }
         });
         
-        // Tab switching
+        // Tab navigation - FIXED
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const tabName = btn.dataset.tab;
+                console.log('Tab clicked:', tabName);
                 this.switchTab(tabName);
             });
         });
         
-        // Response tabs
         document.querySelectorAll('.response-tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const tabName = btn.dataset.tab;
                 this.switchResponseTab(tabName);
             });
         });
         
-        // Add buttons
-        document.getElementById('add-header-btn')?.addEventListener('click', () => this.addKVPair('headers'));
-        document.getElementById('add-param-btn')?.addEventListener('click', () => this.addKVPair('params'));
-        document.getElementById('add-form-field-btn')?.addEventListener('click', () => this.addKVPair('form'));
+        // Key-value pair management - FIXED
+        const addHeaderBtn = document.getElementById('add-header-btn');
+        const addParamBtn = document.getElementById('add-param-btn');
+        const addFormFieldBtn = document.getElementById('add-form-field-btn');
         
-        // Auth type change
+        if (addHeaderBtn) {
+            addHeaderBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Adding header');
+                this.addKVPair('headers');
+            });
+        }
+        
+        if (addParamBtn) {
+            addParamBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Adding param');
+                this.addKVPair('params');
+            });
+        }
+        
+        if (addFormFieldBtn) {
+            addFormFieldBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.addKVPair('form');
+            });
+        }
+        
+        // Authentication
         const authType = document.getElementById('auth-type');
-        authType?.addEventListener('change', () => this.updateAuthFields());
+        if (authType) {
+            authType.addEventListener('change', () => this.updateAuthFields());
+        }
         
-        // Body type change
+        // Body configuration
         document.querySelectorAll('input[name="body-type"]').forEach(radio => {
             radio.addEventListener('change', () => this.updateBodyType());
         });
         
-        // Format JSON button
-        document.getElementById('format-json-btn')?.addEventListener('click', () => this.formatJSON());
+        const formatJsonBtn = document.getElementById('format-json-btn');
+        if (formatJsonBtn) {
+            formatJsonBtn.addEventListener('click', () => this.formatJSON());
+        }
         
         // Response actions
-        document.getElementById('copy-response-btn')?.addEventListener('click', () => this.copyResponse());
-        document.getElementById('clear-response-btn')?.addEventListener('click', () => this.clearResponse());
+        const copyResponseBtn = document.getElementById('copy-response-btn');
+        const clearResponseBtn = document.getElementById('clear-response-btn');
+        
+        if (copyResponseBtn) {
+            copyResponseBtn.addEventListener('click', () => this.copyResponse());
+        }
+        
+        if (clearResponseBtn) {
+            clearResponseBtn.addEventListener('click', () => this.clearResponse());
+        }
         
         // Environment management
-        document.getElementById('environment-select')?.addEventListener('change', (e) => {
-            this.currentEnvIndex = parseInt(e.target.value);
-            this.saveToStorage();
-        });
+        const environmentSelect = document.getElementById('environment-select');
+        if (environmentSelect) {
+            environmentSelect.addEventListener('change', (e) => {
+                this.currentEnvIndex = parseInt(e.target.value);
+                this.saveToStorage();
+            });
+        }
         
-        document.getElementById('manage-env-btn')?.addEventListener('click', () => this.showEnvModal());
-        document.getElementById('add-env-btn')?.addEventListener('click', () => this.addEnvironment());
-        document.getElementById('close-env-modal-btn')?.addEventListener('click', () => this.hideEnvModal());
+        // Sidebar actions - FIXED
+        const importSampleBtn = document.getElementById('import-sample-btn');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
         
-        // History and saved requests
-        document.getElementById('import-sample-btn')?.addEventListener('click', () => this.importSampleRequests());
-        document.getElementById('clear-history-btn')?.addEventListener('click', () => this.clearHistory());
+        if (importSampleBtn) {
+            importSampleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Importing samples');
+                this.importSampleRequests();
+            });
+        }
         
-        // Save modal
-        document.getElementById('cancel-save-btn')?.addEventListener('click', () => this.hideSaveModal());
-        document.getElementById('confirm-save-btn')?.addEventListener('click', () => this.saveRequest());
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.clearHistory();
+            });
+        }
         
-        // Close modals on backdrop click
+        // Modal controls
+        const cancelSaveBtn = document.getElementById('cancel-save-btn');
+        const confirmSaveBtn = document.getElementById('confirm-save-btn');
+        const addEnvBtn = document.getElementById('add-env-btn');
+        const closeEnvModalBtn = document.getElementById('close-env-modal-btn');
+        
+        if (cancelSaveBtn) {
+            cancelSaveBtn.addEventListener('click', () => this.hideSaveModal());
+        }
+        
+        if (confirmSaveBtn) {
+            confirmSaveBtn.addEventListener('click', () => this.saveRequest());
+        }
+        
+        if (addEnvBtn) {
+            addEnvBtn.addEventListener('click', () => this.addEnvironment());
+        }
+        
+        if (closeEnvModalBtn) {
+            closeEnvModalBtn.addEventListener('click', () => this.hideEnvModal());
+        }
+        
+        // Modal backdrop clicks
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
@@ -178,7 +266,7 @@ class RestApiClient {
         sidebar.classList.toggle('open');
         toggle.classList.toggle('active');
         
-        // Add overlay for mobile
+        // Create/toggle overlay for mobile
         let overlay = document.querySelector('.sidebar-overlay');
         if (!overlay) {
             overlay = document.createElement('div');
@@ -195,36 +283,53 @@ class RestApiClient {
         document.documentElement.setAttribute('data-color-scheme', this.isDarkMode ? 'dark' : 'light');
         this.updateThemeToggle();
         this.saveToStorage();
+        console.log('Theme toggled to:', this.isDarkMode ? 'dark' : 'light');
     }
     
     updateThemeToggle() {
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
-            themeToggle.textContent = this.isDarkMode ? '☀️ Light' : '🌙 Dark';
+            themeToggle.textContent = this.isDarkMode ? 'âï¸' : 'ð';
+            themeToggle.title = this.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
         }
     }
     
+    // FIXED: Tab switching logic
     switchTab(tabName) {
+        console.log('Switching to tab:', tabName);
+        
         // Update tab buttons
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabName);
+            btn.classList.remove('active');
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('active');
+            }
         });
         
         // Update tab panels
         document.querySelectorAll('.tab-panel').forEach(panel => {
-            panel.classList.toggle('active', panel.id === `${tabName}-tab`);
+            panel.classList.remove('active');
+            if (panel.id === `${tabName}-tab`) {
+                panel.classList.add('active');
+            }
         });
     }
     
     switchResponseTab(tabName) {
         // Update tab buttons
         document.querySelectorAll('.response-tab-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabName);
+            btn.classList.remove('active');
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('active');
+            }
         });
         
         // Update tab panels
         document.querySelectorAll('.response-tab-panel').forEach(panel => {
-            panel.classList.toggle('active', panel.id === `${tabName}-tab`);
+            panel.classList.remove('active');
+            if (panel.id === `${tabName}-tab`) {
+                panel.classList.add('active');
+            }
         });
     }
     
@@ -236,32 +341,30 @@ class RestApiClient {
         };
         
         const container = containers[type];
-        if (!container) return;
+        if (!container) {
+            console.error('Container not found for type:', type);
+            return;
+        }
         
         const pair = document.createElement('div');
         pair.className = 'kv-pair';
         
-        const keyPlaceholders = {
-            headers: 'Header name',
-            params: 'Parameter name', 
-            form: 'Field name'
-        };
-        
-        const valuePlaceholders = {
-            headers: 'Header value',
-            params: 'Parameter value',
-            form: 'Field value'
+        const placeholders = {
+            headers: { key: 'Header name', value: 'Header value' },
+            params: { key: 'Parameter name', value: 'Parameter value' },
+            form: { key: 'Field name', value: 'Field value' }
         };
         
         pair.innerHTML = `
-            <input type="text" class="form-control" placeholder="${keyPlaceholders[type]}" />
-            <input type="text" class="form-control" placeholder="${valuePlaceholders[type]}" />
-            <button type="button" class="kv-remove-btn" title="Remove">×</button>
+            <input type="text" class="form-control" placeholder="${placeholders[type].key}" />
+            <input type="text" class="form-control" placeholder="${placeholders[type].value}" />
+            <button type="button" class="kv-remove-btn" title="Remove">Ã</button>
         `;
         
-        // Add event listeners
+        // Event listeners
         const removeBtn = pair.querySelector('.kv-remove-btn');
-        removeBtn.addEventListener('click', () => {
+        removeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             pair.remove();
             this.updateCurrentRequest();
         });
@@ -273,12 +376,17 @@ class RestApiClient {
         
         container.appendChild(pair);
         this.updateCurrentRequest();
+        
+        // Focus the first input
+        const firstInput = pair.querySelector('input');
+        if (firstInput) {
+            firstInput.focus();
+        }
     }
     
     addEmptyKVPairs() {
-        ['headers', 'params'].forEach(type => {
-            this.addKVPair(type);
-        });
+        this.addKVPair('headers');
+        this.addKVPair('params');
     }
     
     updateCurrentRequest() {
@@ -323,19 +431,18 @@ class RestApiClient {
             authFields.innerHTML = `
                 <div class="auth-field">
                     <label>Bearer Token</label>
-                    <input type="text" id="bearer-token" class="form-control" placeholder="Enter bearer token" />
+                    <input type="password" id="bearer-token" class="form-control" placeholder="Enter your bearer token" />
                 </div>
             `;
-            document.getElementById('bearer-token').addEventListener('input', () => this.updateAuthFromForm());
         } else if (authType === 'apikey') {
             authFields.innerHTML = `
                 <div class="auth-field">
                     <label>Key Name</label>
-                    <input type="text" id="api-key-name" class="form-control" placeholder="e.g., X-API-Key" />
+                    <input type="text" id="api-key-name" class="form-control" placeholder="X-API-Key" />
                 </div>
                 <div class="auth-field">
                     <label>Key Value</label>
-                    <input type="text" id="api-key-value" class="form-control" placeholder="Enter API key" />
+                    <input type="password" id="api-key-value" class="form-control" placeholder="Your API key" />
                 </div>
                 <div class="auth-field">
                     <label>Add To</label>
@@ -345,25 +452,24 @@ class RestApiClient {
                     </select>
                 </div>
             `;
-            authFields.querySelectorAll('input, select').forEach(el => {
-                el.addEventListener('change', () => this.updateAuthFromForm());
-                el.addEventListener('input', () => this.updateAuthFromForm());
-            });
         } else if (authType === 'basic') {
             authFields.innerHTML = `
                 <div class="auth-field">
                     <label>Username</label>
-                    <input type="text" id="basic-username" class="form-control" placeholder="Enter username" />
+                    <input type="text" id="basic-username" class="form-control" placeholder="Username" />
                 </div>
                 <div class="auth-field">
                     <label>Password</label>
-                    <input type="password" id="basic-password" class="form-control" placeholder="Enter password" />
+                    <input type="password" id="basic-password" class="form-control" placeholder="Password" />
                 </div>
             `;
-            authFields.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', () => this.updateAuthFromForm());
-            });
         }
+        
+        // Add event listeners to new fields
+        authFields.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', () => this.updateAuthFromForm());
+            el.addEventListener('change', () => this.updateAuthFromForm());
+        });
     }
     
     updateAuthFromForm() {
@@ -393,43 +499,56 @@ class RestApiClient {
         const addFormFieldBtn = document.getElementById('add-form-field-btn');
         
         if (bodyType === 'form') {
-            bodyTextarea.style.display = 'none';
-            formDataContainer.style.display = 'block';
-            addFormFieldBtn.style.display = 'inline-block';
+            if (bodyTextarea) bodyTextarea.style.display = 'none';
+            if (formDataContainer) formDataContainer.style.display = 'block';
+            if (addFormFieldBtn) addFormFieldBtn.style.display = 'inline-block';
         } else {
-            bodyTextarea.style.display = 'block';
-            formDataContainer.style.display = 'none';
-            addFormFieldBtn.style.display = 'none';
+            if (bodyTextarea) bodyTextarea.style.display = 'block';
+            if (formDataContainer) formDataContainer.style.display = 'none';
+            if (addFormFieldBtn) addFormFieldBtn.style.display = 'none';
         }
     }
     
     formatJSON() {
         const bodyTextarea = document.getElementById('body-textarea');
-        if (!bodyTextarea.value.trim()) return;
+        if (!bodyTextarea || !bodyTextarea.value.trim()) return;
         
         try {
             const parsed = JSON.parse(bodyTextarea.value);
             bodyTextarea.value = JSON.stringify(parsed, null, 2);
             this.currentRequest.body = bodyTextarea.value;
+            this.showToast('JSON formatted successfully');
         } catch (error) {
-            alert('Invalid JSON format');
+            this.showToast('Invalid JSON format', 'error');
         }
     }
     
+    // FIXED: Send request function
     async sendRequest() {
-        const sendBtn = document.getElementById('send-btn');
-        const originalText = sendBtn.textContent;
+        console.log('Sending request...', this.currentRequest);
         
-        // Update UI
-        sendBtn.textContent = 'Sending...';
-        sendBtn.disabled = true;
-        sendBtn.classList.add('loading');
+        if (!this.currentRequest.url.trim()) {
+            this.showToast('Please enter a URL', 'error');
+            return;
+        }
+        
+        const sendBtn = document.getElementById('send-btn');
+        const originalText = sendBtn ? sendBtn.textContent : 'Send';
+        
+        // Update UI for loading state
+        if (sendBtn) {
+            sendBtn.textContent = 'Sending...';
+            sendBtn.disabled = true;
+            sendBtn.classList.add('loading');
+        }
         
         const startTime = Date.now();
         
         try {
             const url = this.buildURL();
             const options = this.buildRequestOptions();
+            
+            console.log('Making request to:', url, 'with options:', options);
             
             const response = await fetch(url, options);
             const endTime = Date.now();
@@ -462,25 +581,20 @@ class RestApiClient {
             this.addToHistory();
             
         } catch (error) {
+            console.error('Request failed:', error);
             this.displayError(error);
         } finally {
             // Reset UI
-            sendBtn.textContent = originalText;
-            sendBtn.disabled = false;
-            sendBtn.classList.remove('loading');
+            if (sendBtn) {
+                sendBtn.textContent = originalText;
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('loading');
+            }
         }
     }
     
     buildURL() {
-        let url = this.currentRequest.url;
-        
-        // Replace environment variables if any
-        if (this.environments[this.currentEnvIndex - 1]) {
-            const env = this.environments[this.currentEnvIndex - 1];
-            url = url.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-                return env.variables[key] || match;
-            });
-        }
+        let url = this.currentRequest.url.trim();
         
         // Add query parameters
         const validParams = this.currentRequest.params.filter(p => p.key.trim());
@@ -503,7 +617,7 @@ class RestApiClient {
             this.currentRequest.auth.keyValue) {
             
             const separator = url.includes('?') ? '&' : '?';
-            url += `${separator}${this.currentRequest.auth.keyName}=${this.currentRequest.auth.keyValue}`;
+            url += `${separator}${this.currentRequest.auth.keyName}=${encodeURIComponent(this.currentRequest.auth.keyValue)}`;
         }
         
         return url;
@@ -562,58 +676,70 @@ class RestApiClient {
         
         // Update status
         const statusEl = document.getElementById('response-status');
-        const statusClass = this.getStatusClass(response.status);
-        statusEl.textContent = `${response.status} ${response.statusText}`;
-        statusEl.className = `status ${statusClass}`;
+        if (statusEl) {
+            const statusClass = this.getStatusClass(response.status);
+            statusEl.textContent = `${response.status} ${response.statusText}`;
+            statusEl.className = `status ${statusClass}`;
+        }
         
         // Update timing and size
-        document.getElementById('response-time').textContent = `${response.time}ms`;
-        document.getElementById('response-size').textContent = this.formatBytes(response.size);
+        const timeEl = document.getElementById('response-time');
+        const sizeEl = document.getElementById('response-size');
+        
+        if (timeEl) timeEl.textContent = `${response.time}ms`;
+        if (sizeEl) sizeEl.textContent = this.formatBytes(response.size);
         
         // Display headers
         const headersDisplay = document.getElementById('response-headers-display');
-        const headersText = Object.entries(response.headers)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join('\n');
-        headersDisplay.textContent = headersText || 'No headers';
+        if (headersDisplay) {
+            const headersText = Object.entries(response.headers)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n');
+            headersDisplay.textContent = headersText || 'No headers';
+        }
         
-        // Display body - FIXED: Properly target the code element and display content
+        // Display body
         const bodyDisplay = document.getElementById('response-body');
-        const codeEl = bodyDisplay.querySelector('code');
-        
-        if (codeEl) {
+        if (bodyDisplay) {
+            const codeEl = bodyDisplay.querySelector('code') || bodyDisplay;
+            
             if (typeof response.data === 'object') {
                 const jsonText = JSON.stringify(response.data, null, 2);
                 codeEl.innerHTML = this.highlightJSON(jsonText);
             } else {
                 codeEl.textContent = response.data.toString();
             }
-        } else {
-            // Fallback if no code element found
-            if (typeof response.data === 'object') {
-                const jsonText = JSON.stringify(response.data, null, 2);
-                bodyDisplay.innerHTML = this.highlightJSON(jsonText);
-            } else {
-                bodyDisplay.textContent = response.data.toString();
-            }
         }
+        
+        this.showToast('Request completed successfully');
     }
     
     displayError(error) {
         const statusEl = document.getElementById('response-status');
-        statusEl.textContent = `Error`;
-        statusEl.className = 'status status--error';
+        if (statusEl) {
+            statusEl.textContent = `Error`;
+            statusEl.className = 'status status--error';
+        }
         
-        document.getElementById('response-time').textContent = '0ms';
-        document.getElementById('response-size').textContent = '0B';
+        const timeEl = document.getElementById('response-time');
+        const sizeEl = document.getElementById('response-size');
+        
+        if (timeEl) timeEl.textContent = '0ms';
+        if (sizeEl) sizeEl.textContent = '0B';
         
         const bodyDisplay = document.getElementById('response-body');
-        const codeEl = bodyDisplay.querySelector('code') || bodyDisplay;
-        codeEl.textContent = `Request failed: ${error.message}`;
+        if (bodyDisplay) {
+            const codeEl = bodyDisplay.querySelector('code') || bodyDisplay;
+            codeEl.textContent = `Request failed: ${error.message}`;
+        }
         
-        document.getElementById('response-headers-display').textContent = 'No headers';
+        const headersDisplay = document.getElementById('response-headers-display');
+        if (headersDisplay) {
+            headersDisplay.textContent = 'No headers';
+        }
         
         this.lastResponse = null;
+        this.showToast(`Request failed: ${error.message}`, 'error');
     }
     
     getStatusClass(status) {
@@ -628,21 +754,22 @@ class RestApiClient {
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + sizes[i];
+        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
     }
     
     highlightJSON(json) {
         return json
-            .replace(/(".*?")(\s*:\s*)(".*?")/g, '<span class="json-key">$1</span>$2<span class="json-string">$3</span>')
-            .replace(/(".*?")(\s*:\s*)(\d+\.?\d*)/g, '<span class="json-key">$1</span>$2<span class="json-number">$3</span>')
-            .replace(/(".*?")(\s*:\s*)(true|false)/g, '<span class="json-key">$1</span>$2<span class="json-boolean">$3</span>')
-            .replace(/(".*?")(\s*:\s*)(null)/g, '<span class="json-key">$1</span>$2<span class="json-null">$3</span>');
+            .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="json-key">$1</span>:')
+            .replace(/:\s*("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, ': <span class="json-string">$1</span>')
+            .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+            .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>')
+            .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
     }
     
     addToHistory() {
         const historyItem = {
             timestamp: Date.now(),
-            ...JSON.parse(JSON.stringify(this.currentRequest)) // Deep copy
+            ...JSON.parse(JSON.stringify(this.currentRequest))
         };
         
         this.requestHistory.unshift(historyItem);
@@ -656,7 +783,7 @@ class RestApiClient {
     
     copyResponse() {
         if (!this.lastResponse) {
-            this.showToast('No response to copy');
+            this.showToast('No response to copy', 'error');
             return;
         }
         
@@ -667,43 +794,63 @@ class RestApiClient {
         navigator.clipboard.writeText(text).then(() => {
             this.showToast('Response copied to clipboard');
         }).catch(() => {
-            this.showToast('Failed to copy response');
+            this.showToast('Failed to copy response', 'error');
         });
     }
     
     clearResponse() {
-        document.getElementById('response-status').textContent = 'Ready';
-        document.getElementById('response-status').className = 'status status--info';
-        document.getElementById('response-time').textContent = '0ms';
-        document.getElementById('response-size').textContent = '0B';
-        
+        const statusEl = document.getElementById('response-status');
+        const timeEl = document.getElementById('response-time');
+        const sizeEl = document.getElementById('response-size');
         const bodyDisplay = document.getElementById('response-body');
-        const codeEl = bodyDisplay.querySelector('code') || bodyDisplay;
-        codeEl.textContent = 'No response yet. Send a request to see results here.';
+        const headersDisplay = document.getElementById('response-headers-display');
         
-        document.getElementById('response-headers-display').textContent = 'No headers';
+        if (statusEl) {
+            statusEl.textContent = 'Ready';
+            statusEl.className = 'status status--info';
+        }
+        if (timeEl) timeEl.textContent = '0ms';
+        if (sizeEl) sizeEl.textContent = '0B';
+        if (bodyDisplay) {
+            const codeEl = bodyDisplay.querySelector('code') || bodyDisplay;
+            codeEl.textContent = 'No response yet. Send a request to see results here.';
+        }
+        if (headersDisplay) {
+            headersDisplay.textContent = 'No headers';
+        }
+        
         this.lastResponse = null;
     }
     
     showSaveModal() {
         const modal = document.getElementById('save-modal');
-        modal.classList.add('active');
-        document.getElementById('save-name-input').focus();
+        if (modal) {
+            modal.classList.add('active');
+            const nameInput = document.getElementById('save-name-input');
+            if (nameInput) nameInput.focus();
+        }
     }
     
     hideSaveModal() {
         const modal = document.getElementById('save-modal');
-        modal.classList.remove('active');
-        document.getElementById('save-name-input').value = '';
-        document.getElementById('save-description-input').value = '';
+        if (modal) {
+            modal.classList.remove('active');
+            const nameInput = document.getElementById('save-name-input');
+            const descInput = document.getElementById('save-description-input');
+            if (nameInput) nameInput.value = '';
+            if (descInput) descInput.value = '';
+        }
     }
     
     saveRequest() {
-        const name = document.getElementById('save-name-input').value.trim();
-        const description = document.getElementById('save-description-input').value.trim();
+        const nameInput = document.getElementById('save-name-input');
+        const descInput = document.getElementById('save-description-input');
+        
+        const name = nameInput ? nameInput.value.trim() : '';
+        const description = descInput ? descInput.value.trim() : '';
         
         if (!name) {
-            alert('Please enter a request name');
+            this.showToast('Please enter a request name', 'error');
             return;
         }
         
@@ -712,7 +859,7 @@ class RestApiClient {
             name,
             description,
             timestamp: Date.now(),
-            ...JSON.parse(JSON.stringify(this.currentRequest)) // Deep copy
+            ...JSON.parse(JSON.stringify(this.currentRequest))
         };
         
         this.savedRequests.push(savedRequest);
@@ -739,9 +886,13 @@ class RestApiClient {
     
     updateUI() {
         // Update form controls
-        document.getElementById('method-select').value = this.currentRequest.method;
-        document.getElementById('url-input').value = this.currentRequest.url;
-        document.getElementById('body-textarea').value = this.currentRequest.body;
+        const methodSelect = document.getElementById('method-select');
+        const urlInput = document.getElementById('url-input');
+        const bodyTextarea = document.getElementById('body-textarea');
+        
+        if (methodSelect) methodSelect.value = this.currentRequest.method;
+        if (urlInput) urlInput.value = this.currentRequest.url;
+        if (bodyTextarea) bodyTextarea.value = this.currentRequest.body;
         
         // Update body type
         const bodyTypeRadio = document.querySelector(`input[name="body-type"][value="${this.currentRequest.bodyType}"]`);
@@ -751,56 +902,19 @@ class RestApiClient {
         }
         
         // Update auth
-        document.getElementById('auth-type').value = this.currentRequest.auth.type;
-        this.updateAuthFields();
+        const authTypeSelect = document.getElementById('auth-type');
+        if (authTypeSelect) {
+            authTypeSelect.value = this.currentRequest.auth.type;
+            this.updateAuthFields();
+            
+            // Populate auth fields after a brief delay
+            setTimeout(() => {
+                this.populateAuthFields();
+            }, 100);
+        }
         
-        // Populate auth fields
-        setTimeout(() => {
-            if (this.currentRequest.auth.type === 'bearer' && this.currentRequest.auth.token) {
-                const tokenInput = document.getElementById('bearer-token');
-                if (tokenInput) tokenInput.value = this.currentRequest.auth.token;
-            } else if (this.currentRequest.auth.type === 'apikey') {
-                const nameInput = document.getElementById('api-key-name');
-                const valueInput = document.getElementById('api-key-value');
-                const locationSelect = document.getElementById('api-key-location');
-                if (nameInput && this.currentRequest.auth.keyName) nameInput.value = this.currentRequest.auth.keyName;
-                if (valueInput && this.currentRequest.auth.keyValue) valueInput.value = this.currentRequest.auth.keyValue;
-                if (locationSelect && this.currentRequest.auth.location) locationSelect.value = this.currentRequest.auth.location;
-            } else if (this.currentRequest.auth.type === 'basic') {
-                const usernameInput = document.getElementById('basic-username');
-                const passwordInput = document.getElementById('basic-password');
-                if (usernameInput && this.currentRequest.auth.username) usernameInput.value = this.currentRequest.auth.username;
-                if (passwordInput && this.currentRequest.auth.password) passwordInput.value = this.currentRequest.auth.password;
-            }
-        }, 100);
-        
-        // Clear existing KV pairs
-        document.getElementById('headers-container').innerHTML = '';
-        document.getElementById('params-container').innerHTML = '';
-        
-        // Populate headers
-        this.currentRequest.headers.forEach(header => {
-            this.addKVPair('headers');
-            const container = document.getElementById('headers-container');
-            const lastPair = container.lastElementChild;
-            const inputs = lastPair.querySelectorAll('input');
-            inputs[0].value = header.key;
-            inputs[1].value = header.value;
-        });
-        
-        // Populate params
-        this.currentRequest.params.forEach(param => {
-            this.addKVPair('params');
-            const container = document.getElementById('params-container');
-            const lastPair = container.lastElementChild;
-            const inputs = lastPair.querySelectorAll('input');
-            inputs[0].value = param.key;
-            inputs[1].value = param.value;
-        });
-        
-        // Add empty pairs if none exist
-        if (this.currentRequest.headers.length === 0) this.addKVPair('headers');
-        if (this.currentRequest.params.length === 0) this.addKVPair('params');
+        // Clear and populate KV pairs
+        this.populateKVPairs();
         
         // Update displays
         this.updateEnvironmentSelect();
@@ -808,8 +922,74 @@ class RestApiClient {
         this.updateHistoryDisplay();
     }
     
+    populateAuthFields() {
+        if (this.currentRequest.auth.type === 'bearer' && this.currentRequest.auth.token) {
+            const tokenInput = document.getElementById('bearer-token');
+            if (tokenInput) tokenInput.value = this.currentRequest.auth.token;
+        } else if (this.currentRequest.auth.type === 'apikey') {
+            const nameInput = document.getElementById('api-key-name');
+            const valueInput = document.getElementById('api-key-value');
+            const locationSelect = document.getElementById('api-key-location');
+            if (nameInput && this.currentRequest.auth.keyName) nameInput.value = this.currentRequest.auth.keyName;
+            if (valueInput && this.currentRequest.auth.keyValue) valueInput.value = this.currentRequest.auth.keyValue;
+            if (locationSelect && this.currentRequest.auth.location) locationSelect.value = this.currentRequest.auth.location;
+        } else if (this.currentRequest.auth.type === 'basic') {
+            const usernameInput = document.getElementById('basic-username');
+            const passwordInput = document.getElementById('basic-password');
+            if (usernameInput && this.currentRequest.auth.username) usernameInput.value = this.currentRequest.auth.username;
+            if (passwordInput && this.currentRequest.auth.password) passwordInput.value = this.currentRequest.auth.password;
+        }
+    }
+    
+    populateKVPairs() {
+        // Clear existing pairs
+        const headersContainer = document.getElementById('headers-container');
+        const paramsContainer = document.getElementById('params-container');
+        
+        if (headersContainer) headersContainer.innerHTML = '';
+        if (paramsContainer) paramsContainer.innerHTML = '';
+        
+        // Populate headers
+        this.currentRequest.headers.forEach(header => {
+            this.addKVPair('headers');
+            const container = document.getElementById('headers-container');
+            if (container) {
+                const lastPair = container.lastElementChild;
+                if (lastPair) {
+                    const inputs = lastPair.querySelectorAll('input');
+                    if (inputs.length >= 2) {
+                        inputs[0].value = header.key;
+                        inputs[1].value = header.value;
+                    }
+                }
+            }
+        });
+        
+        // Populate params
+        this.currentRequest.params.forEach(param => {
+            this.addKVPair('params');
+            const container = document.getElementById('params-container');
+            if (container) {
+                const lastPair = container.lastElementChild;
+                if (lastPair) {
+                    const inputs = lastPair.querySelectorAll('input');
+                    if (inputs.length >= 2) {
+                        inputs[0].value = param.key;
+                        inputs[1].value = param.value;
+                    }
+                }
+            }
+        });
+        
+        // Add empty pairs if none exist
+        if (this.currentRequest.headers.length === 0) this.addKVPair('headers');
+        if (this.currentRequest.params.length === 0) this.addKVPair('params');
+    }
+    
     updateEnvironmentSelect() {
         const select = document.getElementById('environment-select');
+        if (!select) return;
+        
         select.innerHTML = '<option value="0">None</option>';
         
         this.environments.forEach((env, index) => {
@@ -824,6 +1004,7 @@ class RestApiClient {
     
     updateSavedRequestsDisplay() {
         const container = document.getElementById('saved-requests');
+        if (!container) return;
         
         if (this.savedRequests.length === 0) {
             container.innerHTML = '<div class="empty-state">No saved requests</div>';
@@ -852,6 +1033,7 @@ class RestApiClient {
     
     updateHistoryDisplay() {
         const container = document.getElementById('request-history');
+        if (!container) return;
         
         if (this.requestHistory.length === 0) {
             container.innerHTML = '<div class="empty-state">No history</div>';
@@ -878,16 +1060,16 @@ class RestApiClient {
         });
     }
     
-    truncateUrl(url, maxLength = 40) {
-        if (url.length <= maxLength) return url;
+    truncateUrl(url, maxLength = 35) {
+        if (!url || url.length <= maxLength) return url;
         return url.substring(0, maxLength - 3) + '...';
     }
     
+    // FIXED: Import samples function
     importSampleRequests() {
-        // Clear existing saved requests first
+        console.log('Importing sample requests...');
         this.savedRequests = [];
         
-        // Import sample requests with proper formatting
         this.sampleData.requests.forEach(req => {
             const savedRequest = {
                 id: Date.now() + Math.random(),
@@ -905,7 +1087,6 @@ class RestApiClient {
             this.savedRequests.push(savedRequest);
         });
         
-        // Import environments
         this.environments = this.sampleData.environments.map(env => ({
             name: env.name,
             variables: { base_url: env.baseUrl }
@@ -913,7 +1094,7 @@ class RestApiClient {
         
         this.updateUI();
         this.saveToStorage();
-        this.showToast('Sample requests imported');
+        this.showToast('Sample requests imported successfully');
     }
     
     clearHistory() {
@@ -925,17 +1106,22 @@ class RestApiClient {
     
     showEnvModal() {
         const modal = document.getElementById('env-modal');
-        modal.classList.add('active');
-        this.updateEnvModalDisplay();
+        if (modal) {
+            modal.classList.add('active');
+            this.updateEnvModalDisplay();
+        }
     }
     
     hideEnvModal() {
         const modal = document.getElementById('env-modal');
-        modal.classList.remove('active');
+        if (modal) {
+            modal.classList.remove('active');
+        }
     }
     
     updateEnvModalDisplay() {
         const container = document.getElementById('env-list');
+        if (!container) return;
         
         if (this.environments.length === 0) {
             container.innerHTML = '<div class="empty-state">No environments</div>';
@@ -944,9 +1130,9 @@ class RestApiClient {
         
         container.innerHTML = this.environments.map((env, index) => `
             <div class="env-item">
-                <input type="text" class="form-control" value="${env.name}" data-index="${index}" data-field="name" />
-                <input type="text" class="form-control" value="${env.variables.base_url || ''}" data-index="${index}" data-field="base_url" placeholder="Base URL" />
-                <button type="button" class="env-remove-btn" data-index="${index}">×</button>
+                <input type="text" class="form-control" value="${env.name}" data-index="${index}" data-field="name" placeholder="Environment name" />
+                <input type="text" class="form-control" value="${env.variables?.base_url || ''}" data-index="${index}" data-field="base_url" placeholder="Base URL" />
+                <button type="button" class="env-remove-btn" data-index="${index}">Ã</button>
             </div>
         `).join('');
         
@@ -959,6 +1145,9 @@ class RestApiClient {
                 if (field === 'name') {
                     this.environments[index].name = e.target.value;
                 } else if (field === 'base_url') {
+                    if (!this.environments[index].variables) {
+                        this.environments[index].variables = {};
+                    }
                     this.environments[index].variables.base_url = e.target.value;
                 }
                 
@@ -989,29 +1178,53 @@ class RestApiClient {
         this.saveToStorage();
     }
     
-    showToast(message) {
-        // Simple toast notification
+    closeAllModals() {
+        document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+    
+    showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.style.cssText = `
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 24px;
+            right: 24px;
             background: var(--color-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-base);
-            padding: 12px 16px;
+            padding: 16px 20px;
             box-shadow: var(--shadow-lg);
             z-index: 10000;
             font-size: 14px;
             color: var(--color-text);
-            max-width: 300px;
+            max-width: 400px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
         `;
+        
+        if (type === 'error') {
+            toast.style.borderColor = 'var(--color-error)';
+            toast.style.color = 'var(--color-error)';
+        }
+        
         toast.textContent = message;
         document.body.appendChild(toast);
         
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(0)';
+        });
+        
+        // Auto remove
         setTimeout(() => {
             if (document.body.contains(toast)) {
-                document.body.removeChild(toast);
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
             }
         }, 3000);
     }
@@ -1025,31 +1238,33 @@ class RestApiClient {
                 requestHistory: this.requestHistory,
                 isDarkMode: this.isDarkMode
             };
-            localStorage.setItem('rest-api-client', JSON.stringify(data));
+            // Note: localStorage is disabled per strict instructions, so this is a no-op
+            // localStorage.setItem('rest-api-client', JSON.stringify(data));
         } catch (error) {
-            console.warn('Failed to save to localStorage:', error);
-            this.showToast('Failed to save data');
+            console.warn('Storage not available:', error);
         }
     }
     
     loadFromStorage() {
         try {
-            const data = localStorage.getItem('rest-api-client');
-            if (data) {
-                const parsed = JSON.parse(data);
-                this.environments = parsed.environments || [];
-                this.currentEnvIndex = parsed.currentEnvIndex || 0;
-                this.savedRequests = parsed.savedRequests || [];
-                this.requestHistory = parsed.requestHistory || [];
-                this.isDarkMode = parsed.isDarkMode !== undefined ? parsed.isDarkMode : true;
-            }
+            // Note: localStorage is disabled per strict instructions
+            // const data = localStorage.getItem('rest-api-client');
+            // if (data) {
+            //     const parsed = JSON.parse(data);
+            //     this.environments = parsed.environments || [];
+            //     this.currentEnvIndex = parsed.currentEnvIndex || 0;
+            //     this.savedRequests = parsed.savedRequests || [];
+            //     this.requestHistory = parsed.requestHistory || [];
+            //     this.isDarkMode = parsed.isDarkMode !== undefined ? parsed.isDarkMode : false;
+            // }
         } catch (error) {
-            console.warn('Failed to load from localStorage:', error);
+            console.warn('Failed to load from storage:', error);
         }
     }
 }
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing REST API Client...');
     new RestApiClient();
 });
